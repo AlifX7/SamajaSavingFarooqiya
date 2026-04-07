@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Madrasa Fee Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d1f1a; --surface: #122820; --card: #193529;
+    --border: #2a4a3e; --gold: #d4a843; --gold-light: #f0c96a;
+    --green: #2ecc7a; --red: #e05454; --text: #e8f5ee;
+    --muted: #7aab92; --radius: 14px;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'Nunito', sans-serif; min-height: 100vh; }
+  body::before {
+    content: ''; position: fixed; inset: 0; pointer-events: none;
+    background: radial-gradient(circle at 20% 20%, rgba(212,168,67,.06) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(46,204,122,.05) 0%, transparent 50%);
+  }
+  header {
+    background: linear-gradient(135deg,#122820,#1a3d2e);
+    border-bottom: 2px solid var(--gold);
+    padding: 16px 20px; display: flex; align-items: center; gap: 12px;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 4px 24px rgba(0,0,0,.4);
+  }
+  .logo-icon { width:40px;height:40px;background:linear-gradient(135deg,var(--gold),var(--gold-light));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0; }
+  header h1 { font-family:'Amiri',serif;font-size:1.4rem;color:var(--gold-light);line-height:1.1; }
+  header p { font-size:.72rem;color:var(--muted);margin-top:2px; }
+
+  .tabs { display:flex;gap:4px;padding:14px 16px 0;border-bottom:1px solid var(--border);overflow-x:auto; }
+  .tab-btn { background:none;border:none;cursor:pointer;padding:9px 16px;color:var(--muted);font-family:'Nunito',sans-serif;font-size:.82rem;font-weight:700;border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap;margin-bottom:-1px; }
+  .tab-btn.active { color:var(--gold);border-bottom-color:var(--gold); }
+  .tab-btn:hover:not(.active) { color:var(--text); }
+
+  .main { padding:18px;max-width:960px;margin:0 auto; }
+  .card { background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px; }
+  .card-title { font-family:'Amiri',serif;font-size:1.05rem;color:var(--gold-light);margin-bottom:14px;display:flex;align-items:center;gap:8px; }
+
+  .form-row { display:flex;gap:10px;flex-wrap:wrap; }
+  .form-group { display:flex;flex-direction:column;gap:5px;flex:1;min-width:140px; }
+  label { font-size:.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em; }
+  input, select { background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 12px;font-family:'Nunito',sans-serif;font-size:.88rem;outline:none;transition:border-color .2s; }
+  input:focus, select:focus { border-color:var(--gold); }
+
+  .btn { padding:10px 18px;border:none;cursor:pointer;border-radius:8px;font-family:'Nunito',sans-serif;font-size:.83rem;font-weight:800;transition:all .18s; }
+  .btn-gold { background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#0d1f1a; }
+  .btn-gold:hover { transform:translateY(-1px);box-shadow:0 4px 12px rgba(212,168,67,.4); }
+  .btn-green { background:var(--green);color:#0d1f1a; }
+  .btn-green:hover { background:#3de88a; }
+
+  .stats-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px; }
+  .stat-box { background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center; }
+  .stat-val { font-size:1.7rem;font-weight:800;color:var(--gold-light);line-height:1; }
+  .stat-lbl { font-size:.68rem;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.06em; }
+
+  .student-grid { display:flex;flex-direction:column;gap:8px; }
+  .student-row { background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;transition:border-color .2s;cursor:pointer; }
+  .student-row:hover { border-color:var(--gold); }
+  .student-avatar { width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#2a5240,#3a7a5a);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.88rem;color:var(--gold-light);flex-shrink:0; }
+  .student-name { font-weight:700;flex:1; }
+  .student-meta { font-size:.72rem;color:var(--muted); }
+  .class-badge { background:rgba(212,168,67,.12);color:var(--gold);border:1px solid rgba(212,168,67,.3);padding:2px 9px;border-radius:20px;font-size:.7rem;font-weight:800; }
+  .amount-badge { background:rgba(212,168,67,.12);color:var(--gold);border:1px solid rgba(212,168,67,.3);padding:4px 12px;border-radius:20px;font-weight:800;font-size:.8rem;white-space:nowrap; }
+  .amount-badge.red { color:var(--red);border-color:rgba(224,84,84,.3);background:rgba(224,84,84,.08); }
+
+  .week-table { width:100%;border-collapse:collapse;font-size:.83rem; }
+  .week-table th { background:var(--surface);padding:9px 11px;text-align:left;color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border); }
+  .week-table td { padding:9px 11px;border-bottom:1px solid rgba(42,74,62,.4);vertical-align:middle; }
+  .week-table tr:last-child td { border-bottom:none; }
+  .week-table tr:hover td { background:rgba(255,255,255,.02); }
+
+  .pill { padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:700; }
+  .pill-paid { background:rgba(46,204,122,.15);color:var(--green);border:1px solid rgba(46,204,122,.3); }
+  .pill-unpaid { background:rgba(224,84,84,.1);color:var(--red);border:1px solid rgba(224,84,84,.25); }
+  .check { color:var(--green); } .cross { color:var(--red); }
+
+  .progress-bar { height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:5px; }
+  .progress-fill { height:100%;border-radius:3px;background:linear-gradient(90deg,var(--green),var(--gold));transition:width .4s; }
+
+  .fee-note { background:rgba(212,168,67,.08);border:1px solid rgba(212,168,67,.2);border-radius:8px;padding:10px 14px;font-size:.78rem;color:var(--gold);margin-bottom:14px; }
+
+  .overview-scroll { overflow-x:auto; }
+  .overview-table { width:max-content;min-width:100%;border-collapse:collapse;font-size:.78rem; }
+  .overview-table th { background:var(--surface);padding:8px 10px;color:var(--muted);font-size:.65rem;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);white-space:nowrap; }
+  .overview-table td { padding:8px 10px;border-bottom:1px solid rgba(42,74,62,.4);white-space:nowrap; }
+  .overview-table tr:hover td { background:rgba(255,255,255,.02); }
+
+  .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px; }
+  .modal { background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto; }
+  .modal-title { font-family:'Amiri',serif;font-size:1.15rem;color:var(--gold-light);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center; }
+  .close-btn { background:none;border:none;cursor:pointer;color:var(--muted);font-size:1.1rem;padding:4px;border-radius:6px;transition:color .2s; }
+  .close-btn:hover { color:var(--text); }
+
+  #toast { position:fixed;bottom:22px;left:50%;transform:translateX(-50%);padding:9px 20px;border-radius:30px;font-weight:700;font-size:.83rem;z-index:300;display:none; }
+
+  .empty-state { text-align:center;padding:36px 20px;color:var(--muted); }
+  .empty-state .emoji { font-size:2.2rem;margin-bottom:10px; }
+
+  .filter-row { display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px; }
+  .filter-btn { background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:5px 13px;border-radius:20px;cursor:pointer;font-size:.76rem;font-weight:700;font-family:'Nunito',sans-serif;transition:all .18s; }
+  .filter-btn.active { background:rgba(212,168,67,.15);border-color:var(--gold);color:var(--gold); }
+
+  @media(max-width:480px){ header h1{font-size:1.1rem} .main{padding:12px} }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo-icon">🕌</div>
+  <div>
+    <h1>Madrasa Fee Tracker</h1>
+    <p>Weekly collection · Every Sunday · Starting 05 Apr 2026</p>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('overview',this)">📊 Overview</button>
+  <button class="tab-btn" onclick="switchTab('students',this)">👤 Students</button>
+  <button class="tab-btn" onclick="switchTab('weekly',this)">📅 Weekly</button>
+  <button class="tab-btn" onclick="switchTab('payment',this)">💰 Add Payment</button>
+</div>
+
+<div class="main">
+
+  <!-- OVERVIEW -->
+  <div id="tab-overview">
+    <div class="stats-grid" id="stats-grid"></div>
+    <div class="card">
+      <div class="card-title">📋 Payment Grid</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+        <div id="ov-class-filters" class="filter-row" style="margin:0;flex:1"></div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <label style="font-size:.72rem;color:var(--muted);white-space:nowrap">Show weeks:</label>
+          <select id="ov-week-count" onchange="renderOverview()" style="padding:5px 10px;font-size:.78rem;width:auto">
+            <option value="6">Last 6</option>
+            <option value="12">Last 12</option>
+            <option value="26">Last 26</option>
+            <option value="all">All 100</option>
+          </select>
+        </div>
+      </div>
+      <div class="overview-scroll"><div id="overview-table"></div></div>
+    </div>
+  </div>
+
+  <!-- STUDENTS -->
+  <div id="tab-students" style="display:none">
+    <div class="card">
+      <div class="card-title">➕ Add New Student</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Student Name</label>
+          <input type="text" id="new-name" placeholder="Enter full name" onkeydown="if(event.key==='Enter')addStudent()" />
+        </div>
+        <div class="form-group" style="max-width:110px">
+          <label>Class</label>
+          <select id="new-class">
+            <option value="">—</option>
+            <option>1</option><option>2</option><option>3</option>
+            <option>4</option><option>5</option><option>6</option>
+            <option>7</option><option>8</option><option>9</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:0 0 auto;justify-content:flex-end">
+          <label>&nbsp;</label>
+          <button class="btn btn-gold" onclick="addStudent()">Add Student</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">👥 All Students</div>
+      <div class="filter-row" id="st-class-filters"></div>
+      <div id="student-list"></div>
+    </div>
+  </div>
+
+  <!-- WEEKLY -->
+  <div id="tab-weekly" style="display:none">
+    <div class="card">
+      <div class="card-title">📅 Weekly View</div>
+      <div class="form-row" style="margin-bottom:14px">
+        <div class="form-group">
+          <label>Select Week</label>
+          <select id="week-select" onchange="renderWeeklyView()"></select>
+        </div>
+      </div>
+      <div id="weekly-content"></div>
+    </div>
+  </div>
+
+  <!-- PAYMENT -->
+  <div id="tab-payment" style="display:none">
+    <div class="fee-note">💡 <strong>Week 1 → ₹5</strong> &nbsp;|&nbsp; <strong>Week 2 onwards → ₹2</strong> every Sunday</div>
+
+    <div class="card">
+      <div class="card-title">💰 Record Single Payment</div>
+      <div class="form-row" style="margin-bottom:10px">
+        <div class="form-group">
+          <label>Student</label>
+          <select id="pay-student"></select>
+        </div>
+        <div class="form-group">
+          <label>Week</label>
+          <select id="pay-week" onchange="updatePayAmount()"></select>
+        </div>
+        <div class="form-group" style="max-width:110px">
+          <label>Amount (₹)</label>
+          <input type="number" id="pay-amount" readonly style="opacity:.7" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="pay-date" />
+        </div>
+        <div class="form-group" style="flex:0 0 auto;justify-content:flex-end">
+          <label>&nbsp;</label>
+          <button class="btn btn-green" onclick="recordPayment()">✓ Save Payment</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 Bulk — Mark Whole Week</div>
+      <div class="form-row" style="margin-bottom:12px">
+        <div class="form-group">
+          <label>Week</label>
+          <select id="bulk-week" onchange="renderBulkList()"></select>
+        </div>
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="bulk-date" />
+        </div>
+      </div>
+      <div id="bulk-list"></div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn btn-gold" style="flex:1" onclick="saveBulkPayments()">✓ Save Checked</button>
+        <button class="btn" style="background:var(--surface);color:var(--muted);border:1px solid var(--border)" onclick="checkAllBulk()">Check All</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Student Modal -->
+<div id="student-modal" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="modal-title-text">Details</span>
+      <button class="close-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── 100 Sundays starting 05 Apr 2026 ─────────────────────────────────
+const START = new Date('2026-04-05');
+const WEEKS = Array.from({length:100},(_,i)=>{
+  const d = new Date(START);
+  d.setDate(START.getDate() + i*7);
+  return { id:'W'+(i+1), label:'Week '+(i+1), date:d.toISOString().split('T')[0] };
+});
+
+// Fee rule: Week 1 = ₹5, everything else = ₹2
+function getFee(wi){ return wi===0 ? 5 : 2; }
+
+// Storage
+function load(k){ try{ return JSON.parse(localStorage.getItem(k)||'null'); }catch{ return null; } }
+function save(k,v){ localStorage.setItem(k,JSON.stringify(v)); }
+
+let students = load('mft3_students') || [];
+let payments = load('mft3_payments') || [];
+
+// Helpers
+function wIdx(wid){ return WEEKS.findIndex(w=>w.id===wid); }
+function hasPaid(sid,wid){ return payments.some(p=>p.studentId===sid&&p.weekId===wid); }
+function totalPaid(sid){ return payments.filter(p=>p.studentId===sid).reduce((s,p)=>s+getFee(wIdx(p.weekId)),0); }
+function today(){ return new Date().toISOString().split('T')[0]; }
+function initials(n){ return n.split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase(); }
+function classList(){ return [...new Set(students.map(s=>s.cls).filter(Boolean))].sort((a,b)=>+a-+b); }
+
+// Active filters
+let ovClass='all', stClass='all';
+
+// ── TABS ─────────────────────────────────────────────────────────────
+function switchTab(tab,btn){
+  document.querySelectorAll('[id^="tab-"]').forEach(e=>e.style.display='none');
+  document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active'));
+  document.getElementById('tab-'+tab).style.display='';
+  btn.classList.add('active');
+  if(tab==='overview') renderOverview();
+  if(tab==='students') renderStudents();
+  if(tab==='weekly')   renderWeeklyTab();
+  if(tab==='payment')  renderPaymentTab();
+}
+
+// ── OVERVIEW ─────────────────────────────────────────────────────────
+function renderOverview(){
+  // class filter buttons
+  const cf=document.getElementById('ov-class-filters');
+  cf.innerHTML=`<button class="filter-btn${ovClass==='all'?' active':''}" onclick="setOvClass('all',this)">All</button>`
+    +classList().map(c=>`<button class="filter-btn${ovClass===c?' active':''}" onclick="setOvClass('${c}',this)">Class ${c}</button>`).join('');
+
+  const filtered=ovClass==='all'?students:students.filter(s=>s.cls===ovClass);
+  const collected=payments.reduce((s,p)=>s+getFee(wIdx(p.weekId)),0);
+  const pending=filtered.reduce((s,st)=>{
+    const paid=totalPaid(st.id);
+    const due=WEEKS.reduce((sm,_,i)=>sm+getFee(i),0);
+    return s+(due-paid);
+  },0);
+
+  document.getElementById('stats-grid').innerHTML=`
+    <div class="stat-box"><div class="stat-val">${students.length}</div><div class="stat-lbl">Students</div></div>
+    <div class="stat-box"><div class="stat-val">100</div><div class="stat-lbl">Weeks</div></div>
+    <div class="stat-box"><div class="stat-val">₹${collected}</div><div class="stat-lbl">Collected</div></div>
+    <div class="stat-box"><div class="stat-val">₹${pending}</div><div class="stat-lbl">Pending</div></div>
+  `;
+
+  const wc=document.getElementById('ov-week-count').value;
+  const showWeeks=wc==='all'?WEEKS:WEEKS.slice(0,+wc);
+
+  if(!filtered.length){
+    document.getElementById('overview-table').innerHTML='<div class="empty-state"><div class="emoji">👤</div><p>No students yet. Add them in the Students tab.</p></div>';
+    return;
+  }
+
+  let html=`<table class="overview-table"><thead><tr>
+    <th>Name</th><th>Class</th>
+    ${showWeeks.map((w,i)=>`<th>${w.label.replace('Week','W')}<br/><span style="font-weight:400;font-size:.6rem">${w.date.slice(5)}</span>${i===0?'<br/><span style="color:var(--gold);font-size:.6rem">₹5</span>':'<br/><span style="color:var(--muted);font-size:.6rem">₹2</span>'}</th>`).join('')}
+    <th>Total Paid</th>
+  </tr></thead><tbody>`;
+  filtered.forEach(s=>{
+    const paid=totalPaid(s.id);
+    const due=WEEKS.reduce((sm,_,i)=>sm+getFee(i),0);
+    html+=`<tr>
+      <td style="font-weight:700">${s.name}</td>
+      <td>${s.cls?`<span class="class-badge">Cls ${s.cls}</span>`:'-'}</td>
+      ${showWeeks.map(w=>hasPaid(s.id,w.id)?'<td class="check" style="text-align:center">✓</td>':'<td class="cross" style="text-align:center">✗</td>').join('')}
+      <td><span class="amount-badge${paid<due?' red':''}">₹${paid}</span></td>
+    </tr>`;
+  });
+  html+='</tbody></table>';
+  document.getElementById('overview-table').innerHTML=html;
+}
+
+function setOvClass(c,btn){
+  ovClass=c;
+  document.querySelectorAll('#ov-class-filters .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderOverview();
+}
+
+// ── STUDENTS ─────────────────────────────────────────────────────────
+function addStudent(){
+  const name=document.getElementById('new-name').value.trim();
+  const cls=document.getElementById('new-class').value;
+  if(!name) return toast('Enter a name!','red');
+  if(students.find(s=>s.name.toLowerCase()===name.toLowerCase())) return toast('Student already exists','red');
+  students.push({id:'S'+Date.now(), name, cls});
+  save('mft3_students',students);
+  document.getElementById('new-name').value='';
+  document.getElementById('new-class').value='';
+  renderStudents();
+  toast('Student added ✓');
+}
+
+function renderStudents(){
+  const cf=document.getElementById('st-class-filters');
+  cf.innerHTML=`<button class="filter-btn${stClass==='all'?' active':''}" onclick="setStClass('all',this)">All</button>`
+    +classList().map(c=>`<button class="filter-btn${stClass===c?' active':''}" onclick="setStClass('${c}',this)">Class ${c}</button>`).join('');
+  renderStudentList();
+}
+
+function setStClass(c,btn){
+  stClass=c;
+  document.querySelectorAll('#st-class-filters .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderStudentList();
+}
+
+function renderStudentList(){
+  const el=document.getElementById('student-list');
+  const filtered=stClass==='all'?students:students.filter(s=>s.cls===stClass);
+  if(!filtered.length){
+    el.innerHTML='<div class="empty-state"><div class="emoji">👤</div><p>No students yet!</p></div>';
+    return;
+  }
+  const now=new Date();
+  const weeksPassed=WEEKS.filter(w=>new Date(w.date)<=now).length;
+  el.innerHTML='<div class="student-grid">'+filtered.map(s=>{
+    const paidCount=payments.filter(p=>p.studentId===s.id).length;
+    const pct=weeksPassed?Math.round(paidCount/weeksPassed*100):0;
+    return `<div class="student-row" onclick="openStudentModal('${s.id}')">
+      <div class="student-avatar">${initials(s.name)}</div>
+      <div style="flex:1;min-width:0">
+        <div class="student-name">${s.name} ${s.cls?`<span class="class-badge" style="margin-left:6px">Class ${s.cls}</span>`:''}</div>
+        <div class="student-meta">${paidCount} week${paidCount!==1?'s':''} paid · ₹${totalPaid(s.id)}</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </div>
+      <span class="amount-badge">₹${totalPaid(s.id)}</span>
+    </div>`;
+  }).join('')+'</div>';
+}
+
+// ── STUDENT MODAL ─────────────────────────────────────────────────────
+function openStudentModal(sid){
+  const s=students.find(x=>x.id===sid); if(!s) return;
+  document.getElementById('modal-title-text').textContent=s.name+(s.cls?' — Class '+s.cls:'');
+  const now=new Date();
+  let html=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <span class="amount-badge">Paid: ₹${totalPaid(sid)}</span>
+    <span class="amount-badge" style="color:var(--muted)">Weeks: ${payments.filter(p=>p.studentId===sid).length} / ${WEEKS.filter(w=>new Date(w.date)<=now).length} passed</span>
+  </div>
+  <table class="week-table"><thead><tr><th>Week</th><th>Date (Sunday)</th><th>Fee</th><th>Status</th></tr></thead><tbody>`;
+  WEEKS.forEach((w,i)=>{
+    const p=hasPaid(sid,w.id);
+    const future=new Date(w.date)>now;
+    html+=`<tr>
+      <td>${w.label}</td>
+      <td style="color:var(--muted)">${w.date}</td>
+      <td>₹${getFee(i)}</td>
+      <td>${future&&!p?'<span style="color:var(--muted);font-size:.73rem">Upcoming</span>':p?'<span class="pill pill-paid">✓ Paid</span>':'<span class="pill pill-unpaid">✗ Unpaid</span>'}</td>
+    </tr>`;
+  });
+  html+='</tbody></table>';
+  document.getElementById('modal-body').innerHTML=html;
+  document.getElementById('student-modal').style.display='flex';
+}
+function closeModal(){ document.getElementById('student-modal').style.display='none'; }
+
+// ── WEEKLY TAB ────────────────────────────────────────────────────────
+function renderWeeklyTab(){
+  const sel=document.getElementById('week-select');
+  sel.innerHTML=WEEKS.map((w,i)=>`<option value="${w.id}">Week ${i+1} — ${w.date} (₹${getFee(i)})</option>`).join('');
+  renderWeeklyView();
+}
+function renderWeeklyView(){
+  const wid=document.getElementById('week-select').value;
+  const wi=wIdx(wid);
+  const fee=getFee(wi);
+  const paid=students.filter(s=>hasPaid(s.id,wid));
+  const unpaid=students.filter(s=>!hasPaid(s.id,wid));
+  let html=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+    <span class="pill pill-paid" style="padding:5px 14px">✓ Paid: ${paid.length}</span>
+    <span class="pill pill-unpaid" style="padding:5px 14px">✗ Unpaid: ${unpaid.length}</span>
+    <span class="amount-badge">Collected: ₹${paid.length*fee}</span>
+    <span class="amount-badge red">Pending: ₹${unpaid.length*fee}</span>
+  </div>
+  <table class="week-table"><thead><tr><th>Student</th><th>Class</th><th>Amount</th><th>Status</th></tr></thead><tbody>`;
+  students.forEach(s=>{
+    const p=hasPaid(s.id,wid);
+    html+=`<tr>
+      <td style="font-weight:700">${s.name}</td>
+      <td>${s.cls||'—'}</td>
+      <td>${p?`<span class="amount-badge">₹${fee}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
+      <td>${p?'<span class="pill pill-paid">✓ Paid</span>':'<span class="pill pill-unpaid">✗ Unpaid</span>'}</td>
+    </tr>`;
+  });
+  html+='</tbody></table>';
+  document.getElementById('weekly-content').innerHTML=html;
+}
+
+// ── PAYMENT TAB ───────────────────────────────────────────────────────
+function renderPaymentTab(){
+  const ps=document.getElementById('pay-student');
+  ps.innerHTML=students.length
+    ? students.map(s=>`<option value="${s.id}">${s.name}${s.cls?' (Class '+s.cls+')':''}</option>`).join('')
+    : '<option>— Add students first —</option>';
+
+  const weekOpts=WEEKS.map((w,i)=>`<option value="${w.id}">Week ${i+1} — ${w.date} (₹${getFee(i)})</option>`).join('');
+  document.getElementById('pay-week').innerHTML=weekOpts;
+  document.getElementById('bulk-week').innerHTML=weekOpts;
+
+  document.getElementById('pay-date').value=today();
+  document.getElementById('bulk-date').value=today();
+  updatePayAmount();
+  renderBulkList();
+}
+
+function updatePayAmount(){
+  const wid=document.getElementById('pay-week').value;
+  document.getElementById('pay-amount').value=getFee(wIdx(wid));
+}
+
+function recordPayment(){
+  const sid=document.getElementById('pay-student').value;
+  const wid=document.getElementById('pay-week').value;
+  const date=document.getElementById('pay-date').value;
+  if(!sid||!wid) return toast('Select student & week','red');
+  if(hasPaid(sid,wid)) return toast('Already recorded!','red');
+  payments.push({id:Date.now(),studentId:sid,weekId:wid,date});
+  save('mft3_payments',payments);
+  toast('Payment saved ✓');
+}
+
+function renderBulkList(){
+  const wid=document.getElementById('bulk-week').value;
+  const wi=wIdx(wid);
+  const fee=getFee(wi);
+  if(!students.length){
+    document.getElementById('bulk-list').innerHTML='<div class="empty-state" style="padding:18px"><p>No students yet.</p></div>';
+    return;
+  }
+  document.getElementById('bulk-list').innerHTML='<div style="display:flex;flex-direction:column;gap:6px">'+
+    students.map(s=>{
+      const paid=hasPaid(s.id,wid);
+      return `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border-radius:8px;border:1px solid ${paid?'rgba(46,204,122,.35)':'var(--border)'};cursor:${paid?'default':'pointer'};opacity:${paid?.55:1}">
+        <input type="checkbox" data-sid="${s.id}" ${paid?'checked disabled':''} style="accent-color:var(--green);width:16px;height:16px;flex-shrink:0" />
+        <span style="flex:1;font-weight:700">${s.name}${s.cls?` <span class="class-badge">Cls ${s.cls}</span>`:''}</span>
+        ${paid?'<span class="pill pill-paid">Already Paid</span>':`<span class="amount-badge">₹${fee}</span>`}
+      </label>`;
+    }).join('')+'</div>';
+}
+
+function checkAllBulk(){
+  document.querySelectorAll('#bulk-list input[type=checkbox]:not([disabled])').forEach(c=>c.checked=true);
+}
+
+function saveBulkPayments(){
+  const wid=document.getElementById('bulk-week').value;
+  const date=document.getElementById('bulk-date').value;
+  const checks=[...document.querySelectorAll('#bulk-list input:not([disabled]):checked')];
+  if(!checks.length) return toast('No students selected','red');
+  let count=0;
+  checks.forEach(cb=>{
+    if(!hasPaid(cb.dataset.sid,wid)){
+      payments.push({id:Date.now()+Math.random(),studentId:cb.dataset.sid,weekId:wid,date});
+      count++;
+    }
+  });
+  save('mft3_payments',payments);
+  renderBulkList();
+  toast(count+' payment'+(count!==1?'s':'')+' saved ✓');
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────
+function toast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.style.cssText=`display:block;background:${type==='red'?'var(--red)':'var(--green)'};color:${type==='red'?'#fff':'#0d1f1a'};padding:9px 20px;border-radius:30px;font-weight:700;font-size:.83rem;position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:300`;
+  clearTimeout(t._t);
+  t._t=setTimeout(()=>t.style.display='none',2300);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────
+renderOverview();
+</script>
+</body>
+</html>
